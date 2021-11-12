@@ -23,7 +23,7 @@ app.get('/api/posts', async(req,res)=>{
     try{
         //get queries
         const tagsRequests = []
-        const tagsQueried = req.query.tags.split(',')
+        const tags = req.query.tags
         const direction = req.query.direction
         const sortBy = req.query.sortBy
 
@@ -31,7 +31,7 @@ app.get('/api/posts', async(req,res)=>{
         const validSortBy = ['id','reads','likes','popularity']
         const validDirection = ['desc','asc']
 
-        if(!tagsQueried){
+        if(!tags){
             return res.status(400).json({
                 error: 'Tags parameter is required',
             })
@@ -48,6 +48,7 @@ app.get('/api/posts', async(req,res)=>{
         }
 
         //make array of request promises
+        const tagsQueried = tags.split(',')
         for(let i=0;i<tagsQueried.length;i++){
             tagsRequests.push(fetch(`${url}?tag=${tagsQueried[i].toString()}`))
         }
@@ -65,6 +66,9 @@ app.get('/api/posts', async(req,res)=>{
         for(let postsObject of tagsResponsesJSONResponse){
             result.push(...postsObject.posts)
         }
+        //remove duplicates
+        let resultStringify = result.map(post=>JSON.stringify(post))
+        result = [...new Set(resultStringify)].map(post=>JSON.parse(post))
 
         //sort by direction and sortBy query params
         if(sortBy){
