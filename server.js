@@ -1,6 +1,8 @@
 //require modules
 const express = require('express');
 const cors = require('cors');
+const fetch = require('cross-fetch');
+
 
 //misc
 const PORT = 3000
@@ -17,8 +19,80 @@ app.get('/api/ping',(req,res)=>{
     })
 })
 
-app.get('/api/posts',(req,res)=>{
-    
+app.get('/api/posts', async(req,res)=>{
+    try{
+        //get queries
+        const tagsRequests = []
+        const tagsQueried = req.query.tags.split(',')
+        const direction = req.query.direction
+        const sortBy = req.query.sortBy
+
+        //check if queries are valid
+        const validSortBy = ['id','reads','likes','popularity']
+        const validDirection = ['desc','asc']
+
+        if(!tagsQueried){
+            return res.status(400).json({
+                error: 'Tags parameter is required',
+            })
+        }
+        if(sortBy && !validSortBy.includes(sortBy)){
+            return res.status(400).json({
+                error: 'sortBy parameter is invalid',
+            })
+        }
+        if(direction && !validDirection.includes(direction)){
+            return res.status(400).json({
+                error: 'sortBy parameter is invalid',
+            })
+        }
+
+        //make array of request promises
+        for(let i=0;i<tagsQueried.length;i++){
+            tagsRequests.push(fetch(`${url}?tag=${tagsQueried[i].toString()}`))
+        }
+
+        //return reponse from array of promises
+        const tagsResponses = await Promise.all(tagsRequests)
+        const 
+        
+        //convert to json
+        tagsResponsesJSONRequest = tagsResponses.map(data=>data.json())
+        const tagsResponsesJSONResponse = await Promise.all(tagsResponsesJSONRequest)
+
+        //combine results into one array
+        let result = [];
+        for(let postsObject of tagsResponsesJSONResponse){
+            result.push(...postsObject.posts)
+        }
+
+        //sort by direction and sortBy query params
+        if(sortBy){
+            
+            if(direction){
+                if(direction === 'asc'){
+                    result = result.sort((a,b)=>a[sortBy]-b[sortBy])
+                }
+                if(direction === 'desc'){
+                    result = result.sort((a,b)=>b[sortBy]-a[sortBy])
+                }
+            }else{
+                result = result.sort((a,b)=>a[sortBy]-b[sortBy])
+            }
+        }
+
+
+        return res.status(200).json({
+            posts:result,
+        })
+        
+    }catch(error){
+        console.log(error)
+        return res.status(500).json({
+            error,
+            status:500,
+        })
+    }
 })
 
 app.listen(3000,()=>{
