@@ -8,6 +8,7 @@ const fetch = require('cross-fetch');
 const PORT = 3000
 const app = express();
 const url = 'https://api.hatchways.io/assessment/blog/posts'
+const cache = {}
 
 //middleware
 app.use(cors());
@@ -26,6 +27,12 @@ app.get('/api/posts', async(req,res)=>{
         const tags = req.query.tags
         const direction = req.query.direction
         const sortBy = req.query.sortBy
+
+        if(cache[`${tags}-${direction}-${sortBy}`]){
+            return res.status(200).json({
+                posts:cache[`${tags}-${direction}-${sortBy}`]
+            })
+        }
 
         //check if queries are valid
         const validSortBy = ['id','reads','likes','popularity']
@@ -85,7 +92,8 @@ app.get('/api/posts', async(req,res)=>{
             }
         }
 
-
+        cache[`${tags}-${direction}-${sortBy}`] = result
+        
         return res.status(200).json({
             posts:result,
         })
